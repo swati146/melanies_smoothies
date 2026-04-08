@@ -47,16 +47,17 @@ if ingredients_list:
             pd_df["FRUIT_NAME"] == fruit_chosen, "SEARCH_ON"
         ].iloc[0]
 
-        st.write("The search value for", fruit_chosen, "is", search_on, ".")
-
+        # Show nutrition section for selected fruit
         st.subheader(f"{fruit_chosen} Nutrition Information")
 
+        # API call using SEARCH_ON value
         smoothiefroot_response = requests.get(
             f"https://my.smoothiefroot.com/api/fruit/{search_on}"
         )
 
         data = smoothiefroot_response.json()
 
+        # Handle missing fruits
         if "error" in data:
             st.warning(data["error"])
         else:
