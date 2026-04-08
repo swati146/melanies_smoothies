@@ -2,8 +2,6 @@
 import streamlit as st
 import requests
 import pandas as pd
-
-# from snowflake.snowpark.context import get_active_session
 from snowflake.snowpark.functions import col
 
 # Title
@@ -11,11 +9,10 @@ st.title("🥤 Customize Your Smoothie!")
 st.write("Choose the fruits you want in your custom Smoothie!")
 
 # Name input
-name_on_order = st.text_input('Name on Smoothie:')
-st.write('The name on your Smoothie will be:', name_on_order)
+name_on_order = st.text_input("Name on Smoothie:")
+st.write("The name on your Smoothie will be:", name_on_order)
 
 # Snowflake session
-# session = get_active_session()
 cnx = st.connection("snowflake")
 session = cnx.session()
 
@@ -34,28 +31,34 @@ ingredients_list = st.multiselect(
 
 # Logic
 if ingredients_list:
-    ingredients_string = ''
+    ingredients_string = ""
 
     for fruit_chosen in ingredients_list:
-        ingredients_string += fruit_chosen + ' '
+        ingredients_string += fruit_chosen + " "
+
+        st.subheader(f"{fruit_chosen} Nutrition Information")
 
         smoothiefroot_response = requests.get(
             f"https://my.smoothiefroot.com/api/fruit/{fruit_chosen.lower()}"
         )
 
         data = smoothiefroot_response.json()
-        st.dataframe(pd.DataFrame([data]), use_container_width=True)
 
-    # Build INSERT statement (2 columns)
+        if "error" in data:
+            st.warning(data["error"])
+        else:
+            st.dataframe(pd.DataFrame([data]), use_container_width=True)
+
+    # Build INSERT statement
     my_insert_stmt = f"""
     insert into smoothies.public.orders(ingredients, name_on_order)
     values ('{ingredients_string}', '{name_on_order}')
     """
 
     # Submit button
-    time_to_insert = st.button('Submit Order')
+    time_to_insert = st.button("Submit Order")
 
     # Insert only on click
     if time_to_insert:
         session.sql(my_insert_stmt).collect()
-        st.success(f'Your Smoothie is ordered, {name_on_order}!', icon='✅')
+        st.success(f"Your Smoothie is ordered, {name_on_order}!", icon="✅")
