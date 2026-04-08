@@ -59,7 +59,22 @@ if ingredients_list:
         if "error" in data:
             st.warning(data["error"])
         else:
-            st.dataframe(pd.DataFrame([data]), use_container_width=True)
+            nutrition_df = pd.DataFrame(
+                list(data["nutrition"].items()),
+                columns=["value", "nutrition"]
+            )
+
+            nutrition_df["family"] = data["family"]
+            nutrition_df["genus"] = data["genus"]
+            nutrition_df["id"] = data["id"]
+            nutrition_df["name"] = data["name"]
+            nutrition_df["order"] = data["order"]
+
+            nutrition_df = nutrition_df[
+                ["value", "family", "genus", "id", "name", "nutrition", "order"]
+            ]
+
+            st.dataframe(nutrition_df, use_container_width=True)
 
     my_insert_stmt = f"""
     insert into smoothies.public.orders(ingredients, name_on_order)
