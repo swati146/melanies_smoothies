@@ -16,11 +16,17 @@ st.write("The name on your Smoothie will be:", name_on_order)
 cnx = st.connection("snowflake")
 session = cnx.session()
 
-# Load data
-my_dataframe = session.table("smoothies.public.fruit_options").select(col("FRUIT_NAME"))
+# Load data with SEARCH_ON
+my_dataframe = session.table("smoothies.public.fruit_options").select(
+    col("FRUIT_NAME"),
+    col("SEARCH_ON")
+)
 
-# Convert to list
-fruit_list = my_dataframe.to_pandas()["FRUIT_NAME"].tolist()
+# Convert Snowpark DataFrame to Pandas DataFrame
+pd_df = my_dataframe.to_pandas()
+
+# Fruit list for multiselect
+fruit_list = pd_df["FRUIT_NAME"].tolist()
 
 # Multiselect
 ingredients_list = st.multiselect(
@@ -36,14 +42,22 @@ if ingredients_list:
     for fruit_chosen in ingredients_list:
         ingredients_string += fruit_chosen + " "
 
+        # Get SEARCH_ON value from Pandas DataFrame
+        search_on = pd_df.loc[
+            pd_df["FRUIT_NAME"] == fruit_chosen, "SEARCH_ON"
+        ].iloc[0]
+
+        # Show nutrition section for selected fruit
         st.subheader(f"{fruit_chosen} Nutrition Information")
 
+        # API call using SEARCH_ON value
         smoothiefroot_response = requests.get(
-            f"https://my.smoothiefroot.com/api/fruit/{fruit_chosen.lower()}"
+            f"https://my.smoothiefroot.com/api/fruit/{search_on}"
         )
 
         data = smoothiefroot_response.json()
 
+        # Handle missing fruits
         if "error" in data:
             st.warning(data["error"])
         else:
